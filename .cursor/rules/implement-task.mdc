@@ -1,0 +1,65 @@
+---
+description: CDQ recruiting task — Java AI assistant with RAG and MCP
+alwaysApply: true
+---
+
+# CDQ recruiting task
+
+Build a Java AI assistant with a chat UI. This is a recruiting assignment for CDQ. Implement only what the spec requires.
+
+## Stack
+
+- Java 25, Spring Boot 4, LangChain4j Boot 4 starters (`*-spring-boot4-starter`)
+- LangChain4j for the assistant and for RAG (`ContentRetriever`)
+- Java MCP SDK (`io.modelcontextprotocol.sdk:mcp`) for the countries server — not Spring AI
+- Local LLM: Ollama chat model `qwen3:4b` (RAG uses a separate Ollama embedding model, e.g. `nomic-embed-text`)
+- Maven Wrapper at the **parent root** only (`mvnw` / `mvnw.cmd`)
+- Tests: JUnit 5. Mockito BDD (`given` / `then`, not `when` / `verify`). Capture with `@Captor`.
+
+## Maven modules
+
+Parent POM with three modules. No `commons` module. Weather is not a module.
+
+```
+cdq/
+  mvnw, mvnw.cmd, .mvn/wrapper/
+  pom.xml
+  countries-mcp/   # bootable — Java MCP SDK, Streamable HTTP, REST Countries
+  rag/             # library jar — pgvector ingest + ContentRetriever
+  assistant/       # bootable — Spring Boot, LangChain4j, chat UI
+```
+
+Dependencies: `assistant` compile-depends on `rag`. `assistant` talks to `countries-mcp` via HTTP MCP and to mcp-weather via stdio at runtime. `countries-mcp` and `rag` must not depend on each other or on `assistant`.
+
+## Knowledge sources (all three required)
+
+1. **RAG / pgvector** — module `rag`. Postgres `pgvector/pgvector:pg17`. Embed plain text from https://www.cdq.com/products/cdq-fraud-guard. Wire `ContentRetriever` into the same `AiServices` as the MCP tools.
+2. **Own MCP server** — module `countries-mcp`. Wrap https://restcountries.com/. Two tools only: `get_country_by_name`, `get_country_by_capital`. Short string results, not raw JSON.
+3. **Local weather MCP** — existing https://github.com/semdin/mcp-weather. Assistant launches it with LangChain4j `StdioMcpTransport` (Windows: `npx.cmd`). Needs `WEATHER_API_KEY`.
+
+The model must **compose tools** (e.g. capital of Germany, then temperature there). No `ChatMemory`.
+
+## Milestones
+
+**Milestone 1 — platform, MCPs, assistant** (do this first)
+
+- Parent POM, Java 25, Maven Wrapper, all three module skeletons (`rag` may stay empty)
+- `countries-mcp` running; weather MCP running via stdio
+- `assistant`: Ollama `qwen3:4b`, both MCP clients, chat UI, no content retriever
+- Exit criterion: capital of Germany; temperature in Munich; temperature of Germany’s capital; what do you know about Berlin
+
+**Milestone 2 — RAG** (only after milestone 1)
+
+- Implement `rag`; Docker Compose for pgvector; ingest + retrieve
+- Extra chat question that hits CDQ Fraud Guard
+
+## Deliverables
+
+- Source in a public repo; README with how to run the service and the tests (JDK 25, Ollama, Node, weather API key, Docker for pgvector).
+- Chat answers for the four milestone-1 questions plus at least one RAG/MCP/composition extra.
+
+## General rules
+
+Be honest and helpful when talking, planning, and implementing.
+Use clean code rules and easy to understand code.
+Do not use Spring AI. Do not rewrite mcp-weather in Java.
