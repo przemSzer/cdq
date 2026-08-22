@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CDQ Assistant</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: "Segoe UI", system-ui, sans-serif;
+        }
+        body {
+            margin: 0;
+            background: #f4f1ea;
+            color: #1f1c17;
+        }
+        main {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 2rem 1.25rem 4rem;
+        }
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 650;
+            margin: 0 0 0.35rem;
+        }
+        p.lede {
+            margin: 0 0 1.5rem;
+            color: #5c564c;
+        }
+        #log {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            min-height: 280px;
+            margin-bottom: 1rem;
+        }
+        .bubble {
+            max-width: 85%;
+            padding: 0.75rem 0.95rem;
+            border-radius: 14px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+        }
+        .user {
+            align-self: flex-end;
+            background: #1f4b3a;
+            color: #f7f4ee;
+        }
+        .assistant {
+            align-self: flex-start;
+            background: #fff;
+            border: 1px solid #e0d9cc;
+        }
+        form {
+            display: flex;
+            gap: 0.6rem;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 0.7rem 0.85rem;
+            border: 1px solid #cfc6b6;
+            border-radius: 10px;
+            font: inherit;
+        }
+        button {
+            padding: 0.7rem 1.1rem;
+            border: 0;
+            border-radius: 10px;
+            background: #1f4b3a;
+            color: #fff;
+            font: inherit;
+            cursor: pointer;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <h1>CDQ Assistant</h1>
+    <p class="lede">Ask about countries and current weather. Tools can be composed, for example the temperature in Germany’s capital.</p>
+    <div id="log"></div>
+    <form id="chat-form">
+        <input id="message" type="text" autocomplete="off" placeholder="What is the capital of Germany?" required>
+        <button type="submit">Send</button>
+    </form>
+</main>
+<script>
+    const log = document.getElementById("log");
+    const form = document.getElementById("chat-form");
+    const input = document.getElementById("message");
+    const button = form.querySelector("button");
+
+    function addBubble(text, cls) {
+        const div = document.createElement("div");
+        div.className = "bubble " + cls;
+        div.textContent = text;
+        log.appendChild(div);
+        div.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const message = input.value.trim();
+        if (!message) {
+            return;
+        }
+        addBubble(message, "user");
+        input.value = "";
+        button.disabled = true;
+        try {
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message })
+            });
+            if (!response.ok) {
+                throw new Error("Chat request failed (" + response.status + ")");
+            }
+            const body = await response.json();
+            addBubble(body.reply || "(empty reply)", "assistant");
+        } catch (error) {
+            addBubble(error.message, "assistant");
+        } finally {
+            button.disabled = false;
+            input.focus();
+        }
+    });
+</script>
+</body>
+</html>

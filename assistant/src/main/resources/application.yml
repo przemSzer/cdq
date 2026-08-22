@@ -1,0 +1,27 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: assistant
+logging:
+  level:
+    com.cdq.assistant.chat.ChatController: DEBUG
+
+langchain4j:
+  ollama:
+    streaming-chat-model:
+      base-url: http://localhost:11434
+      model-name: qwen3:4b
+      timeout: PT360S
+      think: false
+      return-thinking: false
+
+assistant:
+  countries-mcp:
+    url: http://localhost:8081/mcp
+  weather:
+    directory: ${WEATHER_MCP_DIR:}
+    script: src/index.ts
+    api-key: ${WEATHER_API_KEY:}
+    api-url: https://api.weatherapi.com/v1/current.json
