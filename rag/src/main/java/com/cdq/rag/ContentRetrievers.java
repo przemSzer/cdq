@@ -25,6 +25,8 @@ public final class ContentRetrievers {
                 .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)
                 .maxResults(maxResults)
+                //TODO:make parameter configurable
+                .minScore(0.8)
                 .build();
     }
 

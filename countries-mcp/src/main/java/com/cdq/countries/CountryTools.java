@@ -37,7 +37,7 @@ public final class CountryTools {
     private SyncToolSpecification byCapitalToolSpec() {
         return SyncToolSpecification.builder()
                 .tool(Tool.builder(GET_COUNTRY_BY_CAPITAL, stringArgument("capital", "Capital city, for example Berlin"))
-                        .description("Look up a country by its capital city. Returns a short summary.")
+                        .description("Look up a country by its capital city. Returns a short summary for the country.")
                         .build())
                 .callHandler((exchange, request) -> textResult(countries.findByCapital(argument(request, "capital"))))
                 .build();

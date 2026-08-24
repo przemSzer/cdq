@@ -14,8 +14,8 @@ langchain4j:
       base-url: http://localhost:11434
       model-name: qwen3:4b
       timeout: PT360S
-      think: false
-      return-thinking: false
+      think: true
+      return-thinking: true
 
 assistant:
   countries-mcp:

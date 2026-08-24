@@ -34,6 +34,7 @@
             gap: 0.75rem;
             min-height: 280px;
             margin-bottom: 1rem;
+            overflow-x: hidden;
         }
         .bubble {
             max-width: 85%;
@@ -41,16 +42,114 @@
             border-radius: 14px;
             line-height: 1.45;
             white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
         .user {
             align-self: flex-end;
             background: #1f4b3a;
             color: #f7f4ee;
         }
-        .assistant {
+        .event {
             align-self: flex-start;
+            display: flex;
+            gap: 0.65rem;
+            max-width: 92%;
+            min-width: 0;
+            border: 1px solid transparent;
+            box-sizing: border-box;
+        }
+        .event .icon {
+            flex: 0 0 auto;
+            font-size: 1.05rem;
+            line-height: 1.45;
+        }
+        .event .event-body,
+        .event .event-text {
+            min-width: 0;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+        .event .event-label {
+            font-size: 0.75rem;
+            font-weight: 650;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            margin-bottom: 0.2rem;
+            opacity: 0.85;
+        }
+        .event.collapsible {
+            display: block;
+        }
+        .event.collapsible > summary {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            cursor: pointer;
+            list-style: none;
+        }
+        .event.collapsible > summary::-webkit-details-marker,
+        .event.collapsible > summary::marker {
+            display: none;
+            content: "";
+        }
+        .event.collapsible > summary::before {
+            content: "▸";
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        .event.collapsible[open] > summary::before {
+            content: "▾";
+        }
+        .event.collapsible > summary .event-label {
+            margin-bottom: 0;
+        }
+        .event.collapsible > .event-text {
+            margin-top: 0.5rem;
+        }
+        .event.thinking {
+            background: #f3eef8;
+            border-color: #d4c6e6;
+            color: #4a3a63;
+        }
+        .event.started {
+            background: #f7f1e3;
+            border-color: #e0d4b8;
+            color: #5c5340;
+        }
+        .event.retrieved {
+            background: #f4efe4;
+            border-color: #d8cbb0;
+            color: #4a4336;
+        }
+        .event.tool {
+            background: #e7f3f6;
+            border-color: #b7d4dc;
+            color: #1a4d5c;
+        }
+        .event.answer {
             background: #fff;
-            border: 1px solid #e0d9cc;
+            border-color: #e0d9cc;
+            color: #1f1c17;
+            max-width: 85%;
+        }
+        .event.done {
+            background: #e8f3ec;
+            border-color: #b7d4c2;
+            color: #2a5340;
+            font-size: 0.9rem;
+        }
+        .event.error {
+            background: #f8ecec;
+            border-color: #e0b8b8;
+            color: #6b2a2a;
+        }
+        .event details {
+            margin-top: 0.35rem;
+            font-size: 0.9rem;
+        }
+        .event summary {
+            cursor: pointer;
         }
         form {
             display: flex;
@@ -94,12 +193,225 @@
     const input = document.getElementById("message");
     const button = form.querySelector("button");
 
+    const EVENT_LOOK = {
+        inferenceStarted: { cls: "started", icon: "⏳", label: "Starting" },
+        retrieved: { cls: "retrieved", icon: "📄", label: "Retrieved documents" },
+        partialThinking: { cls: "thinking", icon: "💭", label: "Thinking" },
+        toolExecution: { cls: "tool", icon: "🔧", label: "Tool" },
+        message: { cls: "answer", icon: "💬", label: "Answer" },
+        done: { cls: "done", icon: "✅", label: "Done" },
+        error: { cls: "error", icon: "⚠️", label: "Error" }
+    };
+
     function addBubble(text, cls) {
         const div = document.createElement("div");
         div.className = "bubble " + cls;
         div.textContent = text;
         log.appendChild(div);
         div.scrollIntoView({ behavior: "smooth", block: "end" });
+        return div;
+    }
+
+    function addEventCard(kind) {
+        const look = EVENT_LOOK[kind] || { cls: "answer", icon: "•", label: kind };
+        const card = document.createElement("div");
+        card.className = "bubble event " + look.cls;
+
+        const icon = document.createElement("span");
+        icon.className = "icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = look.icon;
+
+        const body = document.createElement("div");
+        body.className = "event-body";
+
+        const label = document.createElement("div");
+        label.className = "event-label";
+        label.textContent = look.label;
+
+        const text = document.createElement("div");
+        text.className = "event-text";
+
+        body.append(label, text);
+        card.append(icon, body);
+        log.appendChild(card);
+        card.scrollIntoView({ behavior: "smooth", block: "end" });
+        return { card, text };
+    }
+
+    function addCollapsibleCard(kind) {
+        const look = EVENT_LOOK[kind] || { cls: "answer", icon: "•", label: kind };
+        const details = document.createElement("details");
+        details.className = "bubble event collapsible " + look.cls;
+        details.open = true;
+
+        const summary = document.createElement("summary");
+        const icon = document.createElement("span");
+        icon.className = "icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = look.icon;
+        const label = document.createElement("span");
+        label.className = "event-label";
+        label.textContent = look.label;
+        summary.append(icon, label);
+
+        const text = document.createElement("div");
+        text.className = "event-text";
+        details.append(summary, text);
+        log.appendChild(details);
+        details.scrollIntoView({ behavior: "smooth", block: "end" });
+        return { card: details, text };
+    }
+
+    function appendThinking(current, chunk) {
+        if (!chunk) {
+            return current;
+        }
+        if (!current) {
+            return chunk;
+        }
+        const currentEndsSpace = /\s$/.test(current);
+        const chunkStartsJoiner = /^[\s.,;:!?)'"\]]/.test(chunk);
+        if (currentEndsSpace || chunkStartsJoiner) {
+            return current + chunk;
+        }
+        return current + " " + chunk;
+    }
+
+    function shortArgs(argumentsJson) {
+        if (!argumentsJson) {
+            return "";
+        }
+        try {
+            const parsed = JSON.parse(argumentsJson);
+            return Object.values(parsed).join(" · ");
+        } catch (error) {
+            return argumentsJson;
+        }
+    }
+
+    function renderTool(card, data) {
+        let tool = {};
+        try {
+            tool = JSON.parse(data);
+        } catch (error) {
+            card.text.textContent = data;
+            return;
+        }
+        const headline = [tool.name, shortArgs(tool.arguments)].filter(Boolean).join(" · ");
+        card.text.textContent = headline || "tool";
+        if (tool.result) {
+            const details = document.createElement("details");
+            const summary = document.createElement("summary");
+            summary.textContent = "Result";
+            const result = document.createElement("div");
+            result.textContent = tool.result;
+            details.append(summary, result);
+            card.text.parentElement.append(details);
+        }
+    }
+
+    function formatScore(score) {
+        if (score == null || score === "") {
+            return "";
+        }
+        const value = Number(score);
+        if (Number.isNaN(value)) {
+            return String(score);
+        }
+        return value.toFixed(3);
+    }
+
+    function renderRetrieved(card, data) {
+        let payload = {};
+        try {
+            payload = JSON.parse(data);
+        } catch (error) {
+            card.text.textContent = data;
+            return;
+        }
+        const documents = Array.isArray(payload.documents) ? payload.documents : [];
+        card.text.textContent = (payload.count || documents.length) + " document(s)";
+        documents.forEach((doc, index) => {
+            const details = document.createElement("details");
+            const summary = document.createElement("summary");
+            const title = doc.title || doc.url || ("Chunk " + (index + 1));
+            const score = formatScore(doc.score);
+            summary.textContent = score ? title + " · " + score : title;
+            const body = document.createElement("div");
+            if (score) {
+                const scoreLine = document.createElement("div");
+                scoreLine.textContent = "score " + score;
+                body.append(scoreLine);
+            }
+            if (doc.url) {
+                const url = document.createElement("div");
+                url.textContent = doc.url;
+                body.append(url);
+            }
+            const text = document.createElement("div");
+            text.textContent = doc.text || "";
+            body.append(text);
+            details.append(summary, body);
+            card.text.parentElement.append(details);
+        });
+    }
+
+    function renderDone(card, data) {
+        try {
+            const summary = JSON.parse(data);
+            const parts = [];
+            if (summary.modelName) {
+                parts.push(summary.modelName);
+            }
+            if (summary.messageTokenCount != null) {
+                parts.push(summary.messageTokenCount + " in");
+            }
+            if (summary.responseTokenCount != null) {
+                parts.push(summary.responseTokenCount + " out");
+            }
+            card.text.textContent = parts.join(" · ") || "Finished";
+        } catch (error) {
+            card.text.textContent = data || "Finished";
+        }
+    }
+
+    function parseSseBlock(raw) {
+        let name = "message";
+        const dataLines = [];
+        for (const line of raw.split("\n")) {
+            if (line.startsWith("event:")) {
+                name = line.slice(6).trim();
+            } else if (line.startsWith("data:")) {
+                const value = line.slice(5);
+                dataLines.push(value.startsWith(" ") ? value.slice(1) : value);
+            }
+        }
+        if (!name && dataLines.length === 0) {
+            return null;
+        }
+        return { name, data: dataLines.join("\n") };
+    }
+
+    async function readSse(response, onEvent) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+                break;
+            }
+            buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+            let sep;
+            while ((sep = buffer.indexOf("\n\n")) >= 0) {
+                const block = parseSseBlock(buffer.slice(0, sep));
+                buffer = buffer.slice(sep + 2);
+                if (block) {
+                    onEvent(block);
+                }
+            }
+        }
     }
 
     form.addEventListener("submit", async (event) => {
@@ -108,22 +420,64 @@
         if (!message) {
             return;
         }
+        log.replaceChildren();
         addBubble(message, "user");
         input.value = "";
         button.disabled = true;
+
+        let thinkingCard = null;
         try {
             const response = await fetch("/api/chat", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "text/event-stream"
+                },
                 body: JSON.stringify({ message })
             });
             if (!response.ok) {
                 throw new Error("Chat request failed (" + response.status + ")");
             }
-            const body = await response.json();
-            addBubble(body.reply || "(empty reply)", "assistant");
+            await readSse(response, (sseEvent) => {
+                if (sseEvent.name === "inferenceStarted") {
+                    const card = addEventCard("inferenceStarted");
+                    card.text.textContent = "Waiting for the assistant…";
+                    return;
+                }
+                if (sseEvent.name === "retrieved") {
+                    renderRetrieved(addCollapsibleCard("retrieved"), sseEvent.data);
+                    return;
+                }
+                if (sseEvent.name === "partialThinking") {
+                    if (!thinkingCard) {
+                        thinkingCard = addCollapsibleCard("partialThinking");
+                    }
+                    thinkingCard.text.textContent = appendThinking(
+                            thinkingCard.text.textContent, sseEvent.data);
+                    thinkingCard.card.scrollIntoView({ behavior: "smooth", block: "end" });
+                    return;
+                }
+                if (sseEvent.name === "toolExecution") {
+                    renderTool(addEventCard("toolExecution"), sseEvent.data);
+                    return;
+                }
+                if (sseEvent.name === "message") {
+                    const card = addEventCard("message");
+                    card.text.textContent = sseEvent.data || "(empty reply)";
+                    return;
+                }
+                if (sseEvent.name === "done") {
+                    renderDone(addEventCard("done"), sseEvent.data);
+                    return;
+                }
+                if (sseEvent.name === "error") {
+                    const card = addEventCard("error");
+                    card.text.textContent = sseEvent.data || "Unexpected error";
+                }
+            });
         } catch (error) {
-            addBubble(error.message, "assistant");
+            const card = addEventCard("error");
+            card.text.textContent = error.message;
         } finally {
             button.disabled = false;
             input.focus();
