@@ -34,4 +34,16 @@ class AssistantPropertiesTest {
 
         assertEquals("npx.cmd", properties.weatherLaunchCommand().getFirst());
     }
+
+    @Test
+    void ragDefaultsMatchPgvectorComposeAndNomicEmbeddings() {
+        AssistantProperties properties = new AssistantProperties();
+
+        assertEquals("localhost", properties.getRag().getJdbcHost());
+        assertEquals(5432, properties.getRag().getJdbcPort());
+        assertEquals("rag", properties.getRag().getJdbcDatabase());
+        assertEquals("nomic-embed-text", properties.getRag().toRagProperties().embeddingModel());
+        assertEquals(768, properties.getRag().toRagProperties().embeddingDimension());
+        assertEquals("jdbc:postgresql://localhost:5432/rag", properties.getRag().toRagProperties().jdbcUrl());
+    }
 }

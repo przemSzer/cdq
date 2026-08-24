@@ -25,3 +25,13 @@ assistant:
     script: src/index.ts
     api-key: ${WEATHER_API_KEY:}
     api-url: https://api.weatherapi.com/v1/current.json
+  rag:
+    jdbc-host: ${RAG_JDBC_HOST:localhost}
+    jdbc-port: ${RAG_JDBC_PORT:5432}
+    jdbc-database: ${RAG_JDBC_DATABASE:rag}
+    jdbc-user: ${RAG_JDBC_USER:rag}
+    jdbc-password: ${RAG_JDBC_PASSWORD:rag}
+    ollama-base-url: ${RAG_OLLAMA_BASE_URL:http://localhost:11434}
+    embedding-model: ${RAG_EMBEDDING_MODEL:nomic-embed-text}
+    embedding-dimension: ${RAG_EMBEDDING_DIMENSION:768}
+    max-results: 4

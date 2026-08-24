@@ -6,12 +6,15 @@ import java.util.Locale;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import com.cdq.rag.RagProperties;
+
 //TODO: migrate to records
 @ConfigurationProperties(prefix = "assistant")
 public class AssistantProperties {
 
     private final CountriesMcp countriesMcp = new CountriesMcp();
     private final Weather weather = new Weather();
+    private final Rag rag = new Rag();
 
     public CountriesMcp getCountriesMcp() {
         return countriesMcp;
@@ -19,6 +22,10 @@ public class AssistantProperties {
 
     public Weather getWeather() {
         return weather;
+    }
+
+    public Rag getRag() {
+        return rag;
     }
 
     public List<String> weatherLaunchCommand() {
@@ -111,6 +118,104 @@ public class AssistantProperties {
 
         public void setApiUrl(String apiUrl) {
             this.apiUrl = apiUrl;
+        }
+    }
+
+    public static class Rag {
+
+        private String jdbcHost = "localhost";
+        private int jdbcPort = 5432;
+        private String jdbcDatabase = "rag";
+        private String jdbcUser = "rag";
+        private String jdbcPassword = "rag";
+        private String ollamaBaseUrl = "http://localhost:11434";
+        private String embeddingModel = RagProperties.DEFAULT_EMBEDDING_MODEL;
+        private int embeddingDimension = RagProperties.DEFAULT_EMBEDDING_DIMENSION;
+        private int maxResults = 4;
+
+        public RagProperties toRagProperties() {
+            return new RagProperties(
+                    jdbcHost,
+                    jdbcPort,
+                    jdbcDatabase,
+                    jdbcUser,
+                    jdbcPassword,
+                    ollamaBaseUrl,
+                    embeddingModel,
+                    embeddingDimension,
+                    RagProperties.defaultIngestCacheDir());
+        }
+
+        public String getJdbcHost() {
+            return jdbcHost;
+        }
+
+        public void setJdbcHost(String jdbcHost) {
+            this.jdbcHost = jdbcHost;
+        }
+
+        public int getJdbcPort() {
+            return jdbcPort;
+        }
+
+        public void setJdbcPort(int jdbcPort) {
+            this.jdbcPort = jdbcPort;
+        }
+
+        public String getJdbcDatabase() {
+            return jdbcDatabase;
+        }
+
+        public void setJdbcDatabase(String jdbcDatabase) {
+            this.jdbcDatabase = jdbcDatabase;
+        }
+
+        public String getJdbcUser() {
+            return jdbcUser;
+        }
+
+        public void setJdbcUser(String jdbcUser) {
+            this.jdbcUser = jdbcUser;
+        }
+
+        public String getJdbcPassword() {
+            return jdbcPassword;
+        }
+
+        public void setJdbcPassword(String jdbcPassword) {
+            this.jdbcPassword = jdbcPassword;
+        }
+
+        public String getOllamaBaseUrl() {
+            return ollamaBaseUrl;
+        }
+
+        public void setOllamaBaseUrl(String ollamaBaseUrl) {
+            this.ollamaBaseUrl = ollamaBaseUrl;
+        }
+
+        public String getEmbeddingModel() {
+            return embeddingModel;
+        }
+
+        public void setEmbeddingModel(String embeddingModel) {
+            this.embeddingModel = embeddingModel;
+        }
+
+        public int getEmbeddingDimension() {
+            return embeddingDimension;
+        }
+
+        public void setEmbeddingDimension(int embeddingDimension) {
+            this.embeddingDimension = embeddingDimension;
+        }
+
+        public int getMaxResults() {
+            return maxResults;
+        }
+
+        public void setMaxResults(int maxResults) {
+            this.maxResults = maxResults;
         }
     }
 }
