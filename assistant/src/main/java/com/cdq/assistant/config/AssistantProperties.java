@@ -8,7 +8,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import com.cdq.rag.RagProperties;
 
-//TODO: migrate to records
 @ConfigurationProperties(prefix = "assistant")
 public class AssistantProperties {
 
@@ -58,7 +57,6 @@ public class AssistantProperties {
     private static boolean windows() {
         return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
     }
-    //TODO: migrate to records
     public static class CountriesMcp {
 
         private String url = "http://localhost:8081/mcp";
@@ -132,6 +130,7 @@ public class AssistantProperties {
         private String embeddingModel = RagProperties.DEFAULT_EMBEDDING_MODEL;
         private int embeddingDimension = RagProperties.DEFAULT_EMBEDDING_DIMENSION;
         private int maxResults = 4;
+        private double minScore = 0.8;
 
         public RagProperties toRagProperties() {
             return new RagProperties(
@@ -217,5 +216,9 @@ public class AssistantProperties {
         public void setMaxResults(int maxResults) {
             this.maxResults = maxResults;
         }
+
+        public double getMinScore() {return minScore;}
+
+        public void setMinScore(double minScore) {this.minScore = minScore;}
     }
 }

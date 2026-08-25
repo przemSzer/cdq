@@ -29,12 +29,15 @@ public final class ChunkVectorWriter {
                 .map(ChunkVectorWriter::toSegment)
                 .toList();
         if (segments.isEmpty()) {
-            logger.info("No chunks with content to store");
+            logger.warn("No chunks with content to store");
             return 0;
         }
-        List<Embedding> embeddings = embeddingModel.embedAll(segments).content();
-        embeddingStore.addAll(embeddings, segments);
-        logger.info("Stored {} embeddings", segments.size());
+        for (TextSegment segment : segments) {
+            logger.info("Computing embedding for: {}", segment.text());
+            Embedding embedding = embeddingModel.embed(segment.text()).content();
+            logger.info("Storing embedding in vector db");
+            embeddingStore.add(embedding, segment);
+        }
         return segments.size();
     }
 

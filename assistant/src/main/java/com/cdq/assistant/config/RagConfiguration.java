@@ -14,9 +14,11 @@ public class RagConfiguration {
     @Bean
     ContentRetriever contentRetriever(AssistantProperties properties) {
         AssistantProperties.Rag rag = properties.getRag();
-        return ContentRetrievers.embeddingStore(
+        return ContentRetrievers.create(
                 EmbeddingStores.pgVector(rag.toRagProperties(), false),
                 EmbeddingStores.ollama(rag.toRagProperties()),
-                rag.getMaxResults());
+                rag.getMaxResults(),
+                rag.getMinScore()
+        );
     }
 }

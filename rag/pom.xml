@@ -81,6 +81,9 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <configuration>
                     <mainClass>com.cdq.rag.ingestor.Main</mainClass>
+                    <environmentVariables>
+                        <RAG_INGEST_CACHE_DIR>${project.basedir}/ingest-cache</RAG_INGEST_CACHE_DIR>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>

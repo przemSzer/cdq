@@ -1,5 +1,6 @@
 package com.cdq.rag;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public record RagProperties(
@@ -19,6 +20,18 @@ public record RagProperties(
     public static final String INGEST_CACHE_DIR_ENV = "RAG_INGEST_CACHE_DIR";
 
     public static Path defaultIngestCacheDir() {
+        return resolveIngestCacheDir(Path.of("").toAbsolutePath());
+    }
+
+    static Path resolveIngestCacheDir(Path cwd) {
+        Path moduleCache = cwd.resolve("ingest-cache");
+        if (Files.isDirectory(moduleCache)) {
+            return moduleCache.toAbsolutePath();
+        }
+        Path repoCache = cwd.resolve("rag").resolve("ingest-cache");
+        if (Files.isDirectory(repoCache)) {
+            return repoCache.toAbsolutePath();
+        }
         return Path.of(System.getProperty("java.io.tmpdir"), "ingestor");
     }
 
@@ -32,7 +45,15 @@ public record RagProperties(
                 envOrDefault("RAG_OLLAMA_BASE_URL", "http://localhost:11434"),
                 envOrDefault("RAG_EMBEDDING_MODEL", DEFAULT_EMBEDDING_MODEL),
                 envIntOrDefault("RAG_EMBEDDING_DIMENSION", DEFAULT_EMBEDDING_DIMENSION),
-                Path.of(envOrDefault(INGEST_CACHE_DIR_ENV, defaultIngestCacheDir().toString())));
+                ingestCacheDirFromEnvOrDefault());
+    }
+
+    private static Path ingestCacheDirFromEnvOrDefault() {
+        String env = System.getenv(INGEST_CACHE_DIR_ENV);
+        if (env != null && !env.isBlank()) {
+            return Path.of(env.trim());
+        }
+        return defaultIngestCacheDir();
     }
 
     public String jdbcUrl() {

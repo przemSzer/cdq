@@ -8,6 +8,7 @@ import static org.mockito.BDDMockito.then;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,36 +30,47 @@ class IngestorTest {
     @Mock
     private LLMBasedChunker chunker;
 
+    @Mock
+    private Supplier<LLMBasedChunker> chunkerFactory;
+
     private Ingestor ingestor;
 
     @BeforeEach
     void setUp() {
-        ingestor = new Ingestor(chunker, cacheDir);
+        ingestor = new Ingestor(chunkerFactory, cacheDir);
     }
 
     @Test
     void ingestCallsChunkerAndWritesCacheWhenFileIsMissing() throws Exception {
         Chunk chunk = new Chunk("1", "Fraud Guard", "overview", URL, "CDQ Fraud Guard checks business partners.");
-        given(chunker.performChunking(URL)).willReturn(resultOf(new Chunks(List.of(chunk))));
+        given(chunkerFactory.get())
+                .willReturn(chunker);
+        given(chunker.performChunking(URL))
+                .willReturn(resultOf(new Chunks(List.of(chunk))));
 
         List<Chunk> chunks = ingestor.ingest(URL);
 
         assertEquals(List.of(chunk), chunks);
-        then(chunker).should().performChunking(URL);
+        then(chunkerFactory)
+                .should()
+                .get();
+        then(chunker)
+                .should()
+                .performChunking(URL);
         Path cached = cacheDir.resolve(ChunkCache.fileNameFor(URL));
         assertTrue(Files.isRegularFile(cached));
         assertTrue(Files.readString(cached).contains("Fraud Guard"));
     }
 
     @Test
-    void ingestUsesCacheAndSkipsChunkerWhenFileExists() {
+    void ingestUsesCacheAndDoesNotCallChunkerFactoryWhenFileExists() {
         Chunk chunk = new Chunk("1", "Fraud Guard", "overview", URL, "CDQ Fraud Guard checks business partners.");
         new ChunkCache(cacheDir).write(URL, new Chunks(List.of(chunk)));
 
         List<Chunk> chunks = ingestor.ingest(URL);
 
         assertEquals(List.of(chunk), chunks);
-        then(chunker).shouldHaveNoInteractions();
+        then(chunkerFactory).shouldHaveNoInteractions();
     }
 
     private static Result<Chunks> resultOf(Chunks chunks) {

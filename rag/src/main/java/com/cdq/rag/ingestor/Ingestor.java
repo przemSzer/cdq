@@ -3,6 +3,7 @@ package com.cdq.rag.ingestor;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,15 +14,15 @@ public class Ingestor {
 
     private static final Logger logger = LoggerFactory.getLogger(Ingestor.class);
 
-    private final LLMBasedChunker chunker;
+    private final Supplier<LLMBasedChunker> chunkerFactory;
     private final ChunkCache cache;
 
-    public Ingestor(LLMBasedChunker chunker, Path cacheDir) {
-        this(chunker, new ChunkCache(cacheDir));
+    public Ingestor(Supplier<LLMBasedChunker> chunkerFactory, Path cacheDir) {
+        this(chunkerFactory, new ChunkCache(cacheDir));
     }
 
-    Ingestor(LLMBasedChunker chunker, ChunkCache cache) {
-        this.chunker = chunker;
+    Ingestor(Supplier<LLMBasedChunker> chunkerFactory, ChunkCache cache) {
+        this.chunkerFactory = chunkerFactory;
         this.cache = cache;
     }
 
@@ -32,7 +33,7 @@ public class Ingestor {
             return cached.get().chunks();
         }
         logger.info("Chunking {}", url);
-        Result<Chunks> result = chunker.performChunking(url);
+        Result<Chunks> result = chunkerFactory.get().performChunking(url);
         Chunks chunks = result.content() == null ? new Chunks(List.of()) : result.content();
         cache.write(url, chunks);
         logger.info("Created {} chunks from {} (tools: {})",

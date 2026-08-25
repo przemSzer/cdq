@@ -35,3 +35,4 @@ assistant:
     embedding-model: ${RAG_EMBEDDING_MODEL:nomic-embed-text}
     embedding-dimension: ${RAG_EMBEDDING_DIMENSION:768}
     max-results: 4
+    min-score: 0.8

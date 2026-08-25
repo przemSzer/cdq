@@ -1,0 +1,33 @@
+{
+  "chunks" : [ {
+    "chunkId" : "1",
+    "title" : "CDQ Fraud Guard",
+    "section" : "Overview",
+    "url" : "https://www.cdq.com/products/cdq-fraud-guard",
+    "content" : "In today's digital economy, businesses face increasing threats from payment fraud and inaccurate bank account information. CDQ Fraud Guard offers a robust service to manage and verify global payment data, providing peace of mind that your transactions are secure and compliant. It helps companies protect their business by verifying bank account data and identifying suspicious payment information before it is used operationally."
+  }, {
+    "chunkId" : "2",
+    "title" : "Combat Payment Fraud Collaboratively with the CDQ Fraud Guard",
+    "section" : "Fraud prevention",
+    "url" : "https://www.cdq.com/products/cdq-fraud-guard",
+    "content" : "Fraudulent activities such as falsified invoices can cause significant financial damage. A major challenge is identifying bank accounts that do not belong to the declared business partner but to an attacker. CDQ Fraud Guard leverages community-shared data on proven bank accounts and known fraud cases to help identify and prevent fraud, ensuring the integrity of payment processes."
+  }, {
+    "chunkId" : "3",
+    "title" : "Key Features of CDQ Fraud Guard",
+    "section" : "Features",
+    "url" : "https://www.cdq.com/products/cdq-fraud-guard",
+    "content" : "Bank account verification uses a shared database of validated bank accounts to check new bank account information before operational use. A trust score is assigned to bank accounts based on the number of successful transactions and can be customized to fit the organization's risk appetite. Payment fraud alerts warn community members about potential fraud attacks by maintaining and sharing known fraud cases. Fraud case management allows users to document, manage, and look up fraud cases to identify critical accounts and prevent fraud. Seamless integration is available through a robust API, making it easy to connect with existing financial systems without needing a dedicated interface."
+  }, {
+    "chunkId" : "4",
+    "title" : "CDQ Fraud Guard Highlights",
+    "section" : "Benefits",
+    "url" : "https://www.cdq.com/products/cdq-fraud-guard",
+    "content" : "CDQ Fraud Guard provides enhanced security by reducing the risk of fraud through verification of bank account data against a shared database of validated accounts and known fraud cases. It improves operational efficiency by streamlining the verification of bank account data and the management of fraud cases, saving time and resources. Customizable trust scores let organizations align the system with their specific risk management needs. The solution is community-driven and leverages the CDQ Data Sharing community to deliver reliable, up-to-date information on bank accounts and fraud cases. Real-time fraud alerts enable quick response and prevention."
+  }, {
+    "chunkId" : "5",
+    "title" : "CDQ Fraud Guard in Action",
+    "section" : "Testimonial",
+    "url" : "https://www.cdq.com/products/cdq-fraud-guard",
+    "content" : "“Before implementing CDQ Trust Score, documentation was piling up and business partner onboarding took up to one month. Now, the green or yellow light as a trust score lets us move ahead with no additional documentation and efforts.” Arnab Kundu, Global Process Expert MDM at Clariant."
+  } ]
+}

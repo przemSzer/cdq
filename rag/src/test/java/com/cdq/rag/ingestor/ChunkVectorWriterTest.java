@@ -1,7 +1,8 @@
 package com.cdq.rag.ingestor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
@@ -31,10 +32,7 @@ class ChunkVectorWriterTest {
     private EmbeddingStore<TextSegment> embeddingStore;
 
     @Captor
-    private ArgumentCaptor<List<Embedding>> embeddingsCaptor;
-
-    @Captor
-    private ArgumentCaptor<List<TextSegment>> segmentsCaptor;
+    private ArgumentCaptor<TextSegment> segmentCaptor;
 
     private ChunkVectorWriter writer;
 
@@ -52,17 +50,16 @@ class ChunkVectorWriterTest {
                 "https://www.cdq.com/products/cdq-fraud-guard",
                 "CDQ Fraud Guard checks business partners.");
         Embedding embedding = Embedding.from(new float[] {0.1f, 0.2f});
-        given(embeddingModel.embedAll(anyList())).willReturn(Response.from(List.of(embedding)));
+        given(embeddingModel.embed(anyString())).willReturn(Response.from(embedding));
 
         int stored = writer.store(List.of(chunk));
 
         assertEquals(1, stored);
-        then(embeddingStore).should().addAll(embeddingsCaptor.capture(), segmentsCaptor.capture());
-        TextSegment segment = segmentsCaptor.getValue().getFirst();
+        then(embeddingStore).should().add(eq(embedding), segmentCaptor.capture());
+        TextSegment segment = segmentCaptor.getValue();
         assertEquals("Fraud Guard\n\nCDQ Fraud Guard checks business partners.", segment.text());
         assertEquals("1", segment.metadata().getString("chunkId"));
         assertEquals("https://www.cdq.com/products/cdq-fraud-guard", segment.metadata().getString("url"));
-        assertEquals(List.of(embedding), embeddingsCaptor.getValue());
     }
 
     @Test

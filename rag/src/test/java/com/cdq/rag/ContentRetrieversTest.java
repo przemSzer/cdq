@@ -18,10 +18,7 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.output.Response;
-import dev.langchain4j.rag.content.Content;
-import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.query.Query;
-import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingSearchResult;
 import dev.langchain4j.store.embedding.EmbeddingStore;
@@ -40,18 +37,23 @@ class ContentRetrieversTest {
 
     @Test
     void retrieveEmbedsQueryAndReadsFromStore() {
-        Embedding queryEmbedding = Embedding.from(new float[] {0.1f, 0.2f});
-        given(embeddingModel.embed("What is CDQ Fraud Guard?")).willReturn(Response.from(queryEmbedding));
-        TextSegment segment = TextSegment.from("CDQ Fraud Guard checks business partners.");
+        given(embeddingModel.embed("query"))
+                .willReturn(Response.from(Embedding.from(new float[] {0.1f})));
         given(embeddingStore.search(any(EmbeddingSearchRequest.class)))
-                .willReturn(new EmbeddingSearchResult<>(List.of(
-                        new EmbeddingMatch<>(0.91, "chunk-1", queryEmbedding, segment))));
+                .willReturn(new EmbeddingSearchResult<>(List.of()));
 
-        ContentRetriever retriever = ContentRetrievers.embeddingStore(embeddingStore, embeddingModel, 4);
-        List<Content> contents = retriever.retrieve(Query.from("What is CDQ Fraud Guard?"));
+        var retriever = ContentRetrievers.create(
+                embeddingStore, embeddingModel,
+                ContentRetrievers.DEFAULT_MAX_RESULTS,
+                ContentRetrievers.DEFAULT_MIN_SCORE
+        );
+        retriever.retrieve(Query.from("query"));
 
-        then(embeddingStore).should().search(searchRequestCaptor.capture());
-        assertEquals(4, searchRequestCaptor.getValue().maxResults());
-        assertEquals("CDQ Fraud Guard checks business partners.", contents.getFirst().textSegment().text());
+        then(embeddingStore)
+                .should()
+                .search(searchRequestCaptor.capture());
+        var searchRequest = searchRequestCaptor.getValue();
+        assertEquals(ContentRetrievers.DEFAULT_MAX_RESULTS, searchRequest.maxResults());
+        assertEquals(ContentRetrievers.DEFAULT_MIN_SCORE, searchRequest.minScore());
     }
 }

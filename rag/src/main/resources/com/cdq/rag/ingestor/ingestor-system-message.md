@@ -17,7 +17,7 @@ When extracting content, remove:
 - promotional sections unrelated to the main topic,
 - secondary link lists,
 - scripts, styles, and technical elements,
-- repeated CTAs if they do not add semantic value.
+- repeated CTAs (Call to action) if they do not add semantic value.
 
 Keep only:
 - the main substantive content,

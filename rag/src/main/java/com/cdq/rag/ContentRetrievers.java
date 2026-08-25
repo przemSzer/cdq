@@ -9,24 +9,27 @@ import dev.langchain4j.store.embedding.EmbeddingStore;
 public final class ContentRetrievers {
 
     public static final int DEFAULT_MAX_RESULTS = 4;
+    public static final double DEFAULT_MIN_SCORE = 0.8;
 
-    public static ContentRetriever embeddingStore(RagProperties properties) {
-        return embeddingStore(
+    public static ContentRetriever create(RagProperties properties) {
+        return create(
                 EmbeddingStores.pgVector(properties, false),
                 EmbeddingStores.ollama(properties),
-                DEFAULT_MAX_RESULTS);
+                DEFAULT_MAX_RESULTS,
+                DEFAULT_MIN_SCORE
+        );
     }
 
-    public static ContentRetriever embeddingStore(
+    public static ContentRetriever create(
             EmbeddingStore<TextSegment> embeddingStore,
             EmbeddingModel embeddingModel,
-            int maxResults) {
+            int maxResults,
+            double minScore) {
         return EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)
                 .maxResults(maxResults)
-                //TODO:make parameter configurable
-                .minScore(0.8)
+                .minScore(minScore)
                 .build();
     }
 
