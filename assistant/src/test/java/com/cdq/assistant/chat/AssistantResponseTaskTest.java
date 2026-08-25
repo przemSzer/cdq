@@ -23,7 +23,7 @@ import dev.langchain4j.model.output.TokenUsage;
 import dev.langchain4j.service.TokenStream;
 
 @ExtendWith(MockitoExtension.class)
-class AssistantAnsweringTaskTest {
+class AssistantResponseTaskTest {
 
     @Mock
     private Assistant assistant;
@@ -51,7 +51,7 @@ class AssistantAnsweringTaskTest {
             return tokenStream;
         }).given(tokenStream).onCompleteResponse(any());
 
-        var task = new AssistantAnsweringTask(new SseEmitter(), assistant, Runnable::run);
+        var task = new AssistantResponseTask(new SseEmitter(), assistant, Runnable::run);
         task.start("What is the capital of Germany?");
 
         then(assistant).should().chat(messageCaptor.capture());

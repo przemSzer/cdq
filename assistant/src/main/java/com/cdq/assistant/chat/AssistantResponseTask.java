@@ -4,32 +4,39 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.PartialThinking;
+import dev.langchain4j.model.chat.response.PartialThinkingContext;
+import dev.langchain4j.model.chat.response.StreamingHandle;
 import dev.langchain4j.rag.content.ContentMetadata;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.model.chat.response.PartialThinking;
 import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.service.tool.BeforeToolExecution;
 import dev.langchain4j.service.tool.ToolExecution;
 
-public class AssistantAnsweringTask {
+public class AssistantResponseTask {
 
-    private static final Logger logger = LoggerFactory.getLogger(AssistantAnsweringTask.class);
+    private static final Logger logger = LoggerFactory.getLogger(AssistantResponseTask.class);
 
     private final SseEmitter emitter;
     private final Assistant assistant;
     private final String taskId;
     private final Executor executor;
+    private final AtomicBoolean shouldStopAsistantInference = new AtomicBoolean(false);
 
-    public AssistantAnsweringTask(SseEmitter emitter, Assistant assistant) {
+    public AssistantResponseTask(SseEmitter emitter, Assistant assistant) {
         this(emitter, assistant, null);
     }
 
-    AssistantAnsweringTask(SseEmitter emitter, Assistant assistant, Executor executor) {
+    AssistantResponseTask(SseEmitter emitter, Assistant assistant, Executor executor) {
         this.emitter = emitter;
         this.assistant = assistant;
         this.taskId = UUID.randomUUID().toString();
@@ -43,56 +50,61 @@ public class AssistantAnsweringTask {
         executor.execute(() -> startInference(userMessage));
     }
 
-    //TODO: Cancelling request to ollama on refresh
     private void startInference(String userMessage) {
         try {
             assistant.chat(userMessage)
                     .onRetrieved(this::onRetrieved)
-                    .onPartialThinking((PartialThinking partialThinking) -> {
-                        logger.debug("partialThinking: {}", partialThinking);
-                        if (partialThinking != null && partialThinking.text() != null) {
-                            send("partialThinking", partialThinking.text());
-                        }
-                    })
+                    .onPartialThinkingWithContext(this::onPartialThinking)
                     .beforeToolExecution((BeforeToolExecution beforeToolExecution) ->
                             logger.debug("beforeToolExecution: {}", beforeToolExecution))
-                    .onToolExecuted((ToolExecution toolExecution) -> {
-                        logger.debug("toolExecution: {}", toolExecution);
-                        var toolRequest = toolExecution.request();
-                        send("toolExecution", new ToolCallSummary(
-                                toolRequest == null ? "" : toolRequest.name(),
-                                toolRequest == null ? "" : toolRequest.arguments(),
-                                toolExecution.result()));
-                    })
-                    .onCompleteResponse(response -> {
-                        var message = "";
-                        if (response.aiMessage() != null) {
-                            message = response.aiMessage().text();
-                        }
-                        send("message", message);
-                        var usage = response.tokenUsage();
-                        send("done", new ResponseSummary(
-                                usage == null ? 0 : usage.outputTokenCount(),
-                                usage == null ? 0 : usage.inputTokenCount(),
-                                response.modelName()));
-                        emitter.complete();
-                    })
-                    .onError(ex -> {
-                        send("error", ex.getMessage());
-                        emitter.completeWithError(ex);
-                    })
+                    .onPartialResponseWithContext((partialResponse, context) ->cancelStreamingIfNecessary(context.streamingHandle()))
+                    .onPartialToolCallWithContext((partialToolCall, context) -> cancelStreamingIfNecessary(context.streamingHandle()))
+                    .onToolExecuted(this::onToolExecuted)
+                    .onCompleteResponse(onCompleteResponse())
+                    .onError(onError())
                     .start();
         } catch (RuntimeException ex) {
-            logger.debug("inference failed before stream started", ex);
+            logger.warn("Inference failed before stream started", ex);
             send("error", ex.getMessage());
             emitter.complete();
+            shouldStopAsistantInference.set(true);
+        }
+    }
+
+    private @NonNull Consumer<Throwable> onError() {
+        return ex -> {
+            send("error", ex.getMessage());
+            emitter.completeWithError(ex);
+        };
+    }
+
+    private @NonNull Consumer<ChatResponse> onCompleteResponse() {
+        return response -> {
+            var message = "";
+            if (response.aiMessage() != null) {
+                message = response.aiMessage().text();
+            }
+            send("message", message);
+            var usage = response.tokenUsage();
+            send("done", new ResponseSummary(
+                    usage == null ? 0 : usage.outputTokenCount(),
+                    usage == null ? 0 : usage.inputTokenCount(),
+                    response.modelName()));
+            emitter.complete();
+        };
+    }
+
+    private void cancelStreamingIfNecessary(StreamingHandle handle) {
+        if (shouldStopAsistantInference.get()){
+            logger.info("Stoping assistant inference");
+            handle.cancel();
         }
     }
 
     private void onRetrieved(List<Content> contents) {
         logger.debug("retrieved: {}", contents);
         List<RetrievedDocument> documents = contents == null ? List.of() : contents.stream()
-                .map(AssistantAnsweringTask::toRetrievedDocument)
+                .map(AssistantResponseTask::toRetrievedDocument)
                 .toList();
         send("retrieved", new RetrievedContent(documents.size(), documents));
     }
@@ -125,8 +137,26 @@ public class AssistantAnsweringTask {
             emitter.send(SseEmitter.event().name(event).data(data));
         } catch (IOException ex) {
             logger.debug("client gone, completing emitter", ex);
+            shouldStopAsistantInference.set(true);
             emitter.complete();
         }
+    }
+
+    private void onPartialThinking(PartialThinking partialThinking, PartialThinkingContext context) {
+        logger.debug("partialThinking: {}", partialThinking);
+        cancelStreamingIfNecessary(context.streamingHandle());
+        if (partialThinking != null && partialThinking.text() != null) {
+            send("partialThinking", partialThinking.text());
+        }
+    }
+
+    private void onToolExecuted(ToolExecution toolExecution) {
+        logger.debug("toolExecution: {}", toolExecution);
+        var toolRequest = toolExecution.request();
+        send("toolExecution", new ToolCallSummary(
+                toolRequest == null ? "" : toolRequest.name(),
+                toolRequest == null ? "" : toolRequest.arguments(),
+                toolExecution.result()));
     }
 
     record ToolCallSummary(String name, String arguments, String result) {}

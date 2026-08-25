@@ -180,7 +180,13 @@
 <body>
 <main>
     <h1>CDQ Assistant</h1>
-    <p class="lede">Ask about countries and current weather. Tools can be composed, for example the temperature in Germany’s capital.</p>
+    <p class="lede">
+        Ask about countries, weather (temperature) in cities and CDQ Fraud Detector.
+        <ul>
+            <li>You can ask only one question (no chat, no memory)</li>
+            <li>If you want to stop inference, simple reload page</li>
+        </ul>
+    </p>
     <div id="log"></div>
     <form id="chat-form">
         <input id="message" type="text" autocomplete="off" placeholder="What is the capital of Germany?" required>
@@ -195,7 +201,7 @@
 
     const EVENT_LOOK = {
         inferenceStarted: { cls: "started", icon: "⏳", label: "Starting" },
-        retrieved: { cls: "retrieved", icon: "📄", label: "Retrieved documents" },
+        retrieved: { cls: "retrieved", icon: "📄", label: "Retrieved documents, related to question" },
         partialThinking: { cls: "thinking", icon: "💭", label: "Thinking" },
         toolExecution: { cls: "tool", icon: "🔧", label: "Tool" },
         message: { cls: "answer", icon: "💬", label: "Answer" },

@@ -27,7 +27,7 @@ public class ChatController {
         //TODO: move timeout to application.yml
         final var emitter = new SseEmitter(60_000L * 5L);
         String userMessage = request.message().trim();
-        var task = new AssistantAnsweringTask(emitter, assistant);
+        var task = new AssistantResponseTask(emitter, assistant);
         task.start(userMessage);
         return emitter;
     }
