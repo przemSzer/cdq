@@ -32,6 +32,26 @@ public class AssistantResponseTask {
     private final Executor executor;
     private final AtomicBoolean shouldStopAsistantInference = new AtomicBoolean(false);
 
+    public enum Events{
+        INFERENCE_STARTED("inferenceStarted"),
+        ERROR("error"),
+        MESSAGE("message"),
+        RETRIEVED("retrieved"),
+        PARTIAL_THINKING("partialThinking"),
+        TOOL_EXECUTION("toolExecution"),
+        DONE("done");
+
+        private final String value;
+        
+        Events(String value) {
+            this.value = value;
+        }
+        
+        public String getName() {
+            return value;
+        }        
+    }
+
     public AssistantResponseTask(SseEmitter emitter, Assistant assistant) {
         this(emitter, assistant, null);
     }
@@ -46,7 +66,7 @@ public class AssistantResponseTask {
     }
 
     public void start(String userMessage) {
-        send("inferenceStarted", "started task " + taskId);
+        send(Events.INFERENCE_STARTED.getName(), "started task " + taskId);
         executor.execute(() -> startInference(userMessage));
     }
 
@@ -64,16 +84,16 @@ public class AssistantResponseTask {
                     .onError(onError())
                     .start();
         } catch (RuntimeException ex) {
-            logger.warn("Inference failed before stream started", ex);
+            logger.error("Inference failed before stream started", ex);
             send("error", ex.getMessage());
-            emitter.complete();
+            emitter.completeWithError(ex);
             shouldStopAsistantInference.set(true);
         }
     }
 
     private @NonNull Consumer<Throwable> onError() {
         return ex -> {
-            send("error", ex.getMessage());
+            send(Events.ERROR.getName(), ex.getMessage());
             emitter.completeWithError(ex);
         };
     }
@@ -84,9 +104,9 @@ public class AssistantResponseTask {
             if (response.aiMessage() != null) {
                 message = response.aiMessage().text();
             }
-            send("message", message);
+            send(Events.MESSAGE.getName(), message);
             var usage = response.tokenUsage();
-            send("done", new ResponseSummary(
+            send(Events.DONE.getName(), new ResponseSummary(
                     usage == null ? 0 : usage.outputTokenCount(),
                     usage == null ? 0 : usage.inputTokenCount(),
                     response.modelName()));
@@ -106,7 +126,7 @@ public class AssistantResponseTask {
         List<RetrievedDocument> documents = contents == null ? List.of() : contents.stream()
                 .map(AssistantResponseTask::toRetrievedDocument)
                 .toList();
-        send("retrieved", new RetrievedContent(documents.size(), documents));
+        send(Events.RETRIEVED.getName(), new RetrievedContent(documents.size(), documents));
     }
 
     private static RetrievedDocument toRetrievedDocument(Content content) {
@@ -146,24 +166,24 @@ public class AssistantResponseTask {
         logger.debug("partialThinking: {}", partialThinking);
         cancelStreamingIfNecessary(context.streamingHandle());
         if (partialThinking != null && partialThinking.text() != null) {
-            send("partialThinking", partialThinking.text());
+            send(Events.PARTIAL_THINKING.getName(), partialThinking.text());
         }
     }
 
     private void onToolExecuted(ToolExecution toolExecution) {
         logger.debug("toolExecution: {}", toolExecution);
         var toolRequest = toolExecution.request();
-        send("toolExecution", new ToolCallSummary(
+        send(Events.TOOL_EXECUTION.getName(), new ToolCallSummary(
                 toolRequest == null ? "" : toolRequest.name(),
                 toolRequest == null ? "" : toolRequest.arguments(),
                 toolExecution.result()));
     }
 
-    record ToolCallSummary(String name, String arguments, String result) {}
+    public record ToolCallSummary(String name, String arguments, String result) {}
 
-    record RetrievedDocument(String title, String url, String text, Double score) {}
+    public record RetrievedDocument(String title, String url, String text, Double score) {}
 
-    record RetrievedContent(int count, List<RetrievedDocument> documents) {}
+    public record RetrievedContent(int count, List<RetrievedDocument> documents) {}
 
-    record ResponseSummary(int responseTokenCount, int messageTokenCount, String modelName) {}
+    public record ResponseSummary(int responseTokenCount, int messageTokenCount, String modelName) {}
 }
