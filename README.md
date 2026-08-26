@@ -15,7 +15,7 @@ The MCP server, which exposes two tools, for finding capital by country and coun
 Helper module, which populates the vector db, with data gathered from CDQ page.
 Contains cached docs (chunks), which can be embedded and send to vector db.
 
-### Assistant
+## Assistant
 
 Implements the assistant service, wiring MCPs (country,weather) and retrieval and using Qwen as LLM.
 The service:
