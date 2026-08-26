@@ -2,18 +2,18 @@
 
 Java assistant with a chat UI. It answers country and weather questions through MCP tools, and CDQ Fraud Guard questions through RAG over pgvector.
 
-It uses Langchain4J and implements countries MCP with java sdk for MCP.
+It uses LangChain4j and implements countries MCP with java sdk for MCP.
 
 ## Modules
 
 ## Countries-mcp
 
-The MCP server, which exposes two tools, for finding capital by country and country by capital.
+The MCP server, which exposes two tools, for finding country info (name, capital, region, population) by country name, or capital name.
 
 ## Rag
 
 Helper module, which populates the vector db, with data gathered from CDQ page.
-Contains cached docs (chunks), which can be embedded and send to vector db.
+Contains cached docs (chunks), which can be embedded and sent to vector db.
 
 ## Assistant
 
@@ -133,7 +133,7 @@ $env:WEATHER_API_KEY = "..."
 .\mvnw.cmd -pl assistant spring-boot:run
 ```
 
-If everything will go well, you should see log entry similar to:
+If everything goes well, you should see log entry similar to:
 
 ```
 Started AssistantApplication in 2.792 seconds (process running for 3.163)
@@ -168,7 +168,7 @@ When tools are used it will be also shown on a page. On the following screen:
 
 ![img.png](docs/tools.png)
 
-We can see tool calls (1 and 2). Every tool call box shows tool name, parameters and result.
+We can see tool calls (1 and 2). Every tool call box shows tool name, arguments and result.
 
 You can enter new question on bottom and the process will start again.
 
@@ -176,7 +176,7 @@ When inference is in progress, and you want to stop it simply refresh page.
 
 ## Demo questions
 
-You can enter question from assessment and 
+You can enter question from assessment 
 
 - What is the capital of Germany?
 - What is the temperature in Munich?
@@ -195,18 +195,6 @@ Recorded answer:
 
 > Yes, Clariant uses CDQ Fraud Guard. Their Global Process Expert, Arnab Kundu, states that implementing CDQ Trust Score reduced business partner onboarding time from one month to a more efficient process with green or yellow trust scores, eliminating additional documentation.
 
-
-
-## Tests
-
-Default tests do not call Ollama, OpenAI, or Postgres.
-
-```powershell
-.\mvnw.cmd test
-```
-
-
-
 ## Smoke tests
 
 `AssistantSmokeIT` starts the assistant and checks the demo questions against live Ollama, countries-mcp, weather MCP, and pgvector. Default `.\mvnw.cmd test` skips it. Start pgvector, ingest, and countries-mcp as in the steps above, then:
@@ -222,14 +210,7 @@ Each test may take a few minutes (timeout is 5 minutes per test).
 ## Optional overrides
 
 **Re-chunk the CDQ product page**
-To re-download and re-chunk the product page, delete the JSON under `rag/ingest-cache` (or point `RAG_INGEST_CACHE_DIR` env. variable at an empty directory) and set `OPENAI_API_KEY`.
 
-This will create a LLM client (Chat GPT-5.4-mini) with download web page tool, and will use it to download a given page, and LLM will process it and remove unnecessary markup. After that it will create chunks, which later will be embedded and placed in pgvector. 
-
-**Upstream TypeScript weather MCP** instead of the vendored script: clone [semdin/mcp-weather](https://github.com/semdin/mcp-weather) and point the assistant at it, for example:
-
-```powershell
-$env:WEATHER_MCP_DIR = "C:\path\to\mcp-weather"
-```
-
-You would also need to set `assistant.weather.command` / `assistant.weather.script` (`npx` + `tsx` + `src/index.ts`) to match that server.
+To re-download and re-chunk the product page, delete the JSON under `rag/ingest-cache` and set `OPENAI_API_KEY` env.variable.
+Then run the ingest command again.
+This will create a LLM client (GPT-5.4-mini) with download web page tool, and will use it to download a given page, and LLM will process it and remove unnecessary markup and not needed content. After that it will create chunks, compute embeddings and place them in pgvector. 
