@@ -195,6 +195,10 @@ Recorded answer:
 
 > Yes, Clariant uses CDQ Fraud Guard. Their Global Process Expert, Arnab Kundu, states that implementing CDQ Trust Score reduced business partner onboarding time from one month to a more efficient process with green or yellow trust scores, eliminating additional documentation.
 
+- Is CDQ a company located in Spain?
+
+> The retrieved context does not specify the country where CDQ is located, so it cannot be confirmed whether CDQ is based in Spain.
+
 ## Smoke tests
 
 `AssistantSmokeIT` starts the assistant and checks the demo questions against live Ollama, countries-mcp, weather MCP, and pgvector. Default `.\mvnw.cmd test` skips it. Start pgvector, ingest, and countries-mcp as in the steps above, then:
