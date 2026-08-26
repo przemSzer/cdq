@@ -41,7 +41,7 @@ class AssistantResponseTaskTest {
                 .tokenUsage(new TokenUsage(10, 4))
                 .modelName("qwen3:4b")
                 .build();
-        given(assistant.chat("What is the capital of Germany?")).willReturn(tokenStream);
+        given(assistant.answer("What is the capital of Germany?")).willReturn(tokenStream);
         willAnswer(invocation -> {
             Consumer<ChatResponse> onComplete = invocation.getArgument(0);
             willAnswer(start -> {
@@ -54,7 +54,7 @@ class AssistantResponseTaskTest {
         var task = new AssistantResponseTask(new SseEmitter(), assistant, Runnable::run);
         task.start("What is the capital of Germany?");
 
-        then(assistant).should().chat(messageCaptor.capture());
+        then(assistant).should().answer(messageCaptor.capture());
         assertEquals("What is the capital of Germany?", messageCaptor.getValue());
         then(tokenStream).should().start();
     }

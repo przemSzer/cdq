@@ -72,7 +72,7 @@ public class AssistantResponseTask {
 
     private void startInference(String userMessage) {
         try {
-            assistant.chat(userMessage)
+            assistant.answer(userMessage)
                     .onRetrieved(this::onRetrieved)
                     .onPartialThinkingWithContext(this::onPartialThinking)
                     .beforeToolExecution((BeforeToolExecution beforeToolExecution) ->

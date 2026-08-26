@@ -8,5 +8,5 @@ import dev.langchain4j.service.spring.AiService;
 public interface Assistant {
 
     @SystemMessage(fromResource = "prompts/assistant-system-message.md")
-    TokenStream chat(String userMessage);
+    TokenStream answer(String userMessage);
 }
