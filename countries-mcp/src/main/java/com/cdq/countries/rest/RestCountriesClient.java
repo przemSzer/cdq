@@ -6,7 +6,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import com.cdq.countries.CountriesProperties;
+import com.cdq.countries.CountriesMCPProperties;
 import com.cdq.countries.CountryLookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public final class RestCountriesClient implements CountryLookup {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestCountriesClient.class);
-    static final String DEFAULT_BASE_URL = CountriesProperties.DEFAULT_BASE_URL;
+    static final String DEFAULT_BASE_URL = CountriesMCPProperties.DEFAULT_BASE_URL;
     private static final String FIELDS = "response_fields=names.common,capitals,region,population";
 
     private final HttpGetter httpGetter;
@@ -52,7 +52,7 @@ public final class RestCountriesClient implements CountryLookup {
         try {
             HttpResult result = httpGetter.get(uri);
             if (result.statusCode() == 401) {
-                LOGGER.warn("REST Countries rejected the API key (401). Check {}", CountriesProperties.API_KEY_ENV);
+                LOGGER.warn("REST Countries rejected the API key (401). Check {}", CountriesMCPProperties.API_KEY_ENV);
                 return "Failed to look up " + kind + " '" + trimmed + "'.";
             }
             if (result.statusCode() == 404) {
@@ -72,7 +72,7 @@ public final class RestCountriesClient implements CountryLookup {
                 return notFound(kind, trimmed);
             }
             return String.join("\n", summaries);
-        } catch (InterruptedException ex) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             LOGGER.warn("Lookup interrupted for {} '{}'", kind, trimmed);
             return "Failed to look up " + kind + " '" + trimmed + "'.";

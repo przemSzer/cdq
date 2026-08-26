@@ -4,9 +4,11 @@ import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Map;
 
+import io.modelcontextprotocol.json.McpJsonMapper;
 import org.eclipse.jetty.ee11.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee11.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,24 +29,12 @@ public final class CountriesMcpServer {
 
     public static void main(String[] args) throws Exception {
         LOGGER.info("Starting countries-mcp");
-        CountriesProperties properties = CountriesProperties.load(args);
-        int port = properties.port();
+        var properties = CountriesMCPProperties.fromArgs(args);
         var jsonMapper = McpJsonDefaults.getMapper();
-        var countriesClient = new RestCountriesClient(
-                new JdkHttpGetter(
-                        HttpClient.newBuilder()
-                                .connectTimeout(Duration.ofSeconds(10))
-                                .followRedirects(HttpClient.Redirect.NORMAL)
-                                .build(),
-                        Map.of("Authorization", CountriesProperties.bearer(properties.apiKey()))),
-                new CountryResponseFormatter(jsonMapper),
-                properties.baseUrl());
-        var tools = new CountryTools(countriesClient);
+        var countriesClient = createRestCountriesClient(properties, jsonMapper);
+        var tools = new CountryToolsSpecificationProvider(countriesClient);
 
-        var transport = HttpServletStreamableServerTransportProvider.builder()
-                .jsonMapper(jsonMapper)
-                .mcpEndpoint("/mcp")
-                .build();
+        var transport = createTransport(jsonMapper);
 
         McpServer.sync(transport)
                 .serverInfo("countries-mcp", "0.1.0")
@@ -52,6 +42,16 @@ public final class CountriesMcpServer {
                 .tools(tools.specifications())
                 .build();
 
+        Server server = createJettyServer(properties.port(), transport);
+
+        setupShutdownHook(server);
+
+        server.start();
+        LOGGER.info("countries-mcp listening on http://localhost:{}/mcp ({})", properties.port(), properties.baseUrl());
+        server.join();
+    }
+
+    private static @NonNull Server createJettyServer(int port, HttpServletStreamableServerTransportProvider transport) {
         Server server = new Server(port);
         ServletContextHandler context = new ServletContextHandler();
         context.setContextPath("/");
@@ -59,7 +59,10 @@ public final class CountriesMcpServer {
         holder.setAsyncSupported(true);
         context.addServlet(holder, "/*");
         server.setHandler(context);
+        return server;
+    }
 
+    private static void setupShutdownHook(Server server) {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 LOGGER.info("Shutting down countries-mcp");
@@ -68,10 +71,26 @@ public final class CountriesMcpServer {
                 LOGGER.warn("Error shutting down countries-mcp: {}", ex.getMessage());
             }
         }));
+    }
 
-        server.start();
-        LOGGER.info("countries-mcp listening on http://localhost:{}/mcp ({})", port, properties.baseUrl());
-        server.join();
+    private static HttpServletStreamableServerTransportProvider createTransport(McpJsonMapper jsonMapper) {
+        return HttpServletStreamableServerTransportProvider.builder()
+                .jsonMapper(jsonMapper)
+                .mcpEndpoint("/mcp")
+                .build();
+    }
+
+    private static @NonNull RestCountriesClient createRestCountriesClient(CountriesMCPProperties properties, McpJsonMapper jsonMapper) {
+        return new RestCountriesClient(
+                new JdkHttpGetter(
+                        HttpClient.newBuilder()
+                                .connectTimeout(Duration.ofSeconds(10))
+                                .followRedirects(HttpClient.Redirect.NORMAL)
+                                .build(),
+                        Map.of("Authorization", CountriesMCPProperties.bearer(properties.apiKey()))),
+                new CountryResponseFormatter(jsonMapper),
+                properties.baseUrl()
+        );
     }
 
     static int resolvePort(String[] args) {

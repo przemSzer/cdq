@@ -1,19 +1,19 @@
 package com.cdq.countries;
 
-public record CountriesProperties(int port, String baseUrl, String apiKey) {
+public record CountriesMCPProperties(int port, String baseUrl, String apiKey) {
 
     public static final String DEFAULT_BASE_URL = "https://api.restcountries.com/countries/v5";
     public static final String API_KEY_ENV = "REST_COUNTRIES_API_KEY";
     static final String BASE_URL_ENV = "REST_COUNTRIES_BASE_URL";
 
-    static CountriesProperties load(String[] args) {
-        return new CountriesProperties(
+    static CountriesMCPProperties fromArgs(String[] args) {
+        return new CountriesMCPProperties(
                 CountriesMcpServer.resolvePort(args),
                 envOrDefault(BASE_URL_ENV, DEFAULT_BASE_URL),
                 requireApiKey(System.getenv(API_KEY_ENV)));
     }
 
-    public static String requireApiKey(String apiKey) {
+    static String requireApiKey(String apiKey) {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException(
                     "Set " + API_KEY_ENV + " to your REST Countries v5 API key.");

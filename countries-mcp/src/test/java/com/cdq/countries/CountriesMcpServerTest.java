@@ -7,12 +7,12 @@ import org.junit.jupiter.api.Test;
 class CountriesMcpServerTest {
 
     @Test
-    void resolvePortPrefersCommandLineArgument() {
+    void PortShouldBeTakenFromCommandLineArgument() {
         assertEquals(9090, CountriesMcpServer.resolvePort(new String[] {"9090"}));
     }
 
     @Test
-    void resolvePortFallsBackToDefault() {
+    void IfNoPortInCommandLineUseDefault() {
         assertEquals(CountriesMcpServer.DEFAULT_PORT, CountriesMcpServer.resolvePort(new String[] {}));
     }
 }

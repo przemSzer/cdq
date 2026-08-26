@@ -20,7 +20,7 @@ import io.modelcontextprotocol.spec.McpSchema.CallToolResult;
 import io.modelcontextprotocol.spec.McpSchema.TextContent;
 
 @ExtendWith(MockitoExtension.class)
-class CountryToolsTest {
+class CountryToolsSpecificationProviderTest {
 
     @Mock
     private CountryLookup countries;
@@ -28,11 +28,11 @@ class CountryToolsTest {
     @Captor
     private ArgumentCaptor<String> queryCaptor;
 
-    private CountryTools tools;
+    private CountryToolsSpecificationProvider tools;
 
     @BeforeEach
     void setUp() {
-        tools = new CountryTools(countries);
+        tools = new CountryToolsSpecificationProvider(countries);
     }
 
     @Test
@@ -40,9 +40,11 @@ class CountryToolsTest {
         given(countries.findByName("Germany"))
                 .willReturn("Germany. Capital: Berlin. Region: Europe. Population: 83240525.");
 
-        CallToolResult result = invoke(CountryTools.GET_COUNTRY_BY_NAME, Map.of("name", "Germany"));
+        CallToolResult result = invoke(CountryToolsSpecificationProvider.GET_COUNTRY_BY_NAME, Map.of("name", "Germany"));
 
-        then(countries).should().findByName(queryCaptor.capture());
+        then(countries)
+                .should()
+                .findByName(queryCaptor.capture());
         assertEquals("Germany", queryCaptor.getValue());
         assertEquals(
                 "Germany. Capital: Berlin. Region: Europe. Population: 83240525.",
@@ -54,7 +56,7 @@ class CountryToolsTest {
         given(countries.findByCapital("Berlin"))
                 .willReturn("Germany. Capital: Berlin. Region: Europe. Population: 83240525.");
 
-        CallToolResult result = invoke(CountryTools.GET_COUNTRY_BY_CAPITAL, Map.of("capital", "Berlin"));
+        CallToolResult result = invoke(CountryToolsSpecificationProvider.GET_COUNTRY_BY_CAPITAL, Map.of("capital", "Berlin"));
 
         then(countries).should().findByCapital(queryCaptor.capture());
         assertEquals("Berlin", queryCaptor.getValue());
