@@ -21,8 +21,9 @@ assistant:
   countries-mcp:
     url: http://localhost:8081/mcp
   weather:
+    command: node
     directory: ${WEATHER_MCP_DIR:}
-    script: src/index.ts
+    script: mcp-weather/weather-mcp.mjs
     api-key: ${WEATHER_API_KEY:}
     api-url: https://api.weatherapi.com/v1/current.json
   rag:

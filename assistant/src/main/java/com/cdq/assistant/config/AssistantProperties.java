@@ -2,7 +2,6 @@ package com.cdq.assistant.config;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Locale;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -28,7 +27,7 @@ public class AssistantProperties {
     }
 
     public List<String> weatherLaunchCommand() {
-        return List.of(resolvedWeatherCommand(), "tsx", resolvedWeatherScript());
+        return List.of(resolvedWeatherCommand(), resolvedWeatherScript(), "--mcp");
     }
 
     String resolvedWeatherCommand() {
@@ -36,27 +35,20 @@ public class AssistantProperties {
         if (command != null && !command.isBlank()) {
             return command;
         }
-        return windows() ? "npx.cmd" : "npx";
+        return "node";
     }
 
     String resolvedWeatherScript() {
-        String directory = weather.getDirectory();
         String script = weather.getScript() == null || weather.getScript().isBlank()
-                ? "src/index.ts"
+                ? "mcp-weather/weather-mcp.mjs"
                 : weather.getScript();
+        String directory = weather.getDirectory();
         if (directory != null && !directory.isBlank()) {
             return Path.of(directory, script).toAbsolutePath().toString();
         }
-        if (!Path.of(script).isAbsolute()) {
-            throw new IllegalStateException(
-                    "Set WEATHER_MCP_DIR or assistant.weather.script to the mcp-weather entrypoint.");
-        }
-        return script;
+        return Path.of(script).toAbsolutePath().toString();
     }
 
-    private static boolean windows() {
-        return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
-    }
     public static class CountriesMcp {
 
         private String url = "http://localhost:8081/mcp";
@@ -74,7 +66,7 @@ public class AssistantProperties {
 
         private String command;
         private String directory;
-        private String script = "src/index.ts";
+        private String script = "mcp-weather/weather-mcp.mjs";
         private String apiKey;
         private String apiUrl = "https://api.weatherapi.com/v1/current.json";
 
