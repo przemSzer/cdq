@@ -108,6 +108,7 @@ class AssistantSmokeIT {
     private void noDocsShouldBeRetrieved(List<TestClient.SseEvent> events) {
         assertThat(events)
                 .filteredOn(e -> Events.RETRIEVED.getName().equals(e.name()))
+                .isNotEmpty()
                 .allSatisfy(e ->
                 {
                     var content = JSON.treeToValue(JSON.readTree(e.data()), RetrievedContent.class);
@@ -122,6 +123,7 @@ class AssistantSmokeIT {
     private void eventsShouldContainRetrievedDocs(List<TestClient.SseEvent> events) {
         assertThat(events)
                 .filteredOn(e -> Events.RETRIEVED.getName().equals(e.name()))
+                .isNotEmpty()
                 .allSatisfy(e ->
                 {
                     var content = JSON.treeToValue(JSON.readTree(e.data()), RetrievedContent.class);
