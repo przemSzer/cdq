@@ -27,7 +27,7 @@ public class McpClientConfiguration {
     @Bean
     McpClient countriesMcpClient(AssistantProperties properties) {
         var transport = StreamableHttpMcpTransport.builder()
-                .url(properties.getCountriesMcp().getUrl())
+                .url(properties.countriesMcp().url())
                 .timeout(Duration.ofSeconds(30))
                 .setHttpVersion1_1()
                 .logRequests(true)
@@ -43,13 +43,13 @@ public class McpClientConfiguration {
     @Bean
     McpClient weatherMcpClient(AssistantProperties properties) {
         logger.info("Starting weather MCP client");
-        AssistantProperties.Weather weather = properties.getWeather();
-        if (weather.getApiKey() == null || weather.getApiKey().isBlank()) {
+        AssistantProperties.Weather weather = properties.weather();
+        if (weather.apiKey() == null || weather.apiKey().isBlank()) {
             throw new IllegalStateException("Set WEATHER_API_KEY for the weather MCP server.");
         }
         Map<String, String> environment = new HashMap<>();
-        environment.put("WEATHER_API_KEY", weather.getApiKey());
-        environment.put("WEATHER_API_URL", weather.getApiUrl());
+        environment.put("WEATHER_API_KEY", weather.apiKey());
+        environment.put("WEATHER_API_URL", weather.apiUrl());
         logger.info("Will use the following command: {}", properties.weatherLaunchCommand());
         var transport = StdioMcpTransport.builder()
                 .command(properties.weatherLaunchCommand())

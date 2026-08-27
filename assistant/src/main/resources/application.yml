@@ -18,6 +18,9 @@ langchain4j:
       return-thinking: true
 
 assistant:
+  chat:
+    emitter-timeout: 5m
+
   countries-mcp:
     url: http://localhost:8081/mcp
   weather:
