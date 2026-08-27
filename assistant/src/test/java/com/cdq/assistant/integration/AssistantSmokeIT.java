@@ -1,7 +1,7 @@
 package com.cdq.assistant.integration;
 
-import com.cdq.assistant.chat.AssistantResponseTask;
-import com.cdq.assistant.chat.AssistantResponseTask.Events;
+import com.cdq.assistant.chat.events.Events;
+import com.cdq.assistant.chat.events.RetrievedContent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -110,9 +110,9 @@ class AssistantSmokeIT {
                 .filteredOn(e -> Events.RETRIEVED.getName().equals(e.name()))
                 .allSatisfy(e ->
                 {
-                    var content = JSON.treeToValue(JSON.readTree(e.data()), AssistantResponseTask.RetrievedContent.class);
+                    var content = JSON.treeToValue(JSON.readTree(e.data()), RetrievedContent.class);
                     assertThat(content.count())
-                            .isEqualTo(0);
+                            .isZero();
                     assertThat(content.documents())
                             .isEmpty();
                 }
@@ -124,7 +124,7 @@ class AssistantSmokeIT {
                 .filteredOn(e -> Events.RETRIEVED.getName().equals(e.name()))
                 .allSatisfy(e ->
                 {
-                    var content = JSON.treeToValue(JSON.readTree(e.data()), AssistantResponseTask.RetrievedContent.class);
+                    var content = JSON.treeToValue(JSON.readTree(e.data()), RetrievedContent.class);
                     assertThat(content.count())
                             .isGreaterThan(1);
                     assertThat(content.documents())
